@@ -206,7 +206,47 @@ Create a new ``second_ros2_ws/src/urdf_tutorial_r2d2/launch`` folder.
 Open your editor and paste the following code, saving it as ``second_ros2_ws/src/urdf_tutorial_r2d2/launch/demo_launch.py``
 
 .. literalinclude:: launch/demo_launch.py
-  :language: python
+
+..code-block:: python
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import FileContent, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    
+    # CORRECTED LINE: Separate package name from file path
+    urdf_path = PathJoinSubstitution([
+        FindPackageShare('urdf_tutorial_r2d2'),
+        'urdf',  # Assuming the file is in a 'urdf' directory
+        'r2d2.urdf.xml'
+    ])
+    
+    urdf = FileContent(urdf_path)
+
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation (Gazebo) clock if true'),
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time, 'robot_description': urdf}],
+            # REMOVED: arguments=[urdf] - This is incorrect as it passes file content as argument
+            ),
+        Node(
+            package='urdf_tutorial_r2d2',
+            executable='state_publisher',
+            name='state_publisher',
+            output='screen'),
+    ])
+
 
 
 5 Edit the setup.py file
